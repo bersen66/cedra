@@ -119,7 +119,6 @@ function(cdr_cpp_library)
         set(CDR_LIB_IS_HEADER_ONLY 0)
     endif()
 
-
     if (CDR_LIB_IS_HEADER_ONLY)
         add_library(${_NAME} INTERFACE)
         target_include_directories(${_NAME}
@@ -129,21 +128,40 @@ function(cdr_cpp_library)
         )
         target_link_libraries(${_NAME} INTERFACE ${ARGS_DEPS})
     else()
-        add_library(${_NAME} SHARED ${ARGS_SRCS})
+        add_library(${_NAME} SHARED ${CDR_SOURCES})
         target_include_directories(${_NAME}
             PUBLIC
             "$<BUILD_INTERFACE:${CDR_COMMON_INCLUDE_DIRS}>"
             "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         )
-
-        target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS} )
+        target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS})
         target_compile_options(${_NAME} PRIVATE ${ARGS_COPTS})
         set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${CDR_CXX_STANDARD})
     endif()
 
     add_library(cdr::${ARGS_NAME} ALIAS ${_NAME})
-    #TODO: Installation
+
+    if (ARGS_PUBLIC AND CDR_ENABLE_INSTALL)
+        # Install the target and associate it with the export set "CdrTargets"
+        install(TARGETS ${_NAME}
+            EXPORT CdrTargets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+
+        # Install headers while preserving directory structure
+        foreach(HDR ${ARGS_HDRS})
+            # Get the directory of the current header relative to the project root
+            file(RELATIVE_PATH REL_DIR "${PROJECT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+
+            # Install to a matching path in the include directory
+            install(FILES ${HDR} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${REL_DIR}")
+        endforeach()
+    endif()
 endfunction()
+
 
 # cdr_cpp_test()
 #

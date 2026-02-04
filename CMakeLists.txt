@@ -30,7 +30,30 @@ endif()
 include(PrepareDependencies)
 add_subdirectory(cdr)
 
-# TODO: INSTALLING
 if (CDR_ENABLE_INSTALL)
+    include(CMakePackageConfigHelpers)
 
+    install(EXPORT CdrTargets
+        FILE CdrTargets.cmake
+        NAMESPACE cdr::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cedra
+    )
+
+    configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CdrConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/CdrConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cedra
+    )
+
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/CdrConfigVersion.cmake"
+        VERSION 0.1.0
+        COMPATIBILITY AnyNewerVersion
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/CdrConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/CdrConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cedra
+    )
 endif()
