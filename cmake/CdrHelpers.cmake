@@ -92,7 +92,7 @@ function(cdr_cpp_library)
     set(multiValueArgs HDRS SRCS DEPS COPTS)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    set(_NAME "cdr_${ARGS_NAME}")
+    set(_NAME "${ARGS_NAME}")
 
     if (ARGS_NAME STREQUAL "")
         message(FATAL_ERROR "Name of library is required")
