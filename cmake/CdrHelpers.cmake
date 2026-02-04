@@ -265,7 +265,7 @@ function(cdr_cpp_executable)
 
     set(_NAME ${ARGS_NAME})
 
-    if (${_NAME} STREQUAL "")
+    if ("${_NAME}" STREQUAL "")
         message(FATAL_ERROR "Name for executable must be provided")
     endif()
 
@@ -278,6 +278,12 @@ function(cdr_cpp_executable)
     target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS})
     set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${CDR_CXX_STANDARD})
 
-    # TODO: Installation
+    if (CDR_ENABLE_INSTALL)
+        install(TARGETS ${_NAME}
+            EXPORT CdrTargets
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
 
 endfunction()
