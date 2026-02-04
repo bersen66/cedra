@@ -136,8 +136,9 @@ function(cdr_cpp_library)
             "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         )
 
-        target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS})
+        target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS} )
         target_compile_options(${_NAME} PRIVATE ${ARGS_COPTS})
+        set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${CDR_CXX_STANDARD})
     endif()
 
     add_library(cdr::${ARGS_NAME} ALIAS ${_NAME})
@@ -196,6 +197,7 @@ function(cdr_cpp_test)
     target_compile_options(${_NAME} PRIVATE ${ARGS_COPTS})
     target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS})
     add_test(NAME ${_NAME} COMMAND ${_NAME})
+    set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${CDR_CXX_STANDARD})
 endfunction()
 
 # cdr_cpp_executable()
@@ -256,6 +258,7 @@ function(cdr_cpp_executable)
     add_executable(${_NAME} ${ARGS_SRCS})
     target_compile_options(${_NAME} PRIVATE ${ARGS_COPTS})
     target_link_libraries(${_NAME} PUBLIC ${ARGS_DEPS})
+    set_property(TARGET ${_NAME} PROPERTY CXX_STANDARD ${CDR_CXX_STANDARD})
 
     # TODO: Installation
 
