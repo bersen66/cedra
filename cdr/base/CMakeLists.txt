@@ -4,6 +4,7 @@ cdr_cpp_library(
     "generator.h"
     "check.h"
     "internal/check_impl.h"
+    "numeric.h"
   SRCS
     "internal/check_impl.cc"
   DEPS

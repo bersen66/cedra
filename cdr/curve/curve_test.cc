@@ -144,3 +144,39 @@ TEST(Curve, DummyContract) {
 
     ASSERT_NEAR(contract.rate.value().Fraction(), contract.target_rate.Fraction(), 0.001);
 }
+
+class CurveBootstrapTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        hs.StaticInit()
+            ("TEST", day(31)/December/year(2025))
+            ("TEST", day(2)/January/year(2026));
+        today = day(1)/January/year(2026);
+    }
+
+    cdr::HolidayStorage hs;
+    cdr::DateType today;
+};
+
+TEST_F(CurveBootstrapTest, SimpleContract) {
+    cdr::Curve curve;
+    curve.StaticInit().SetToday(today).SetCalendar(&hs).SetJurisdiction("TEST");
+
+    DummyContract contract{"TEST", day(5)/January/year(2026), std::nullopt, cdr::Percent::FromFraction(0.20), 100.};
+    curve.AdaptToContract(&contract);
+
+    EXPECT_NEAR(contract.rate.value().Fraction(), 0.20, 0.001);
+}
+
+TEST_F(CurveBootstrapTest, ExistingPillar) {
+    cdr::Curve curve;
+    curve.StaticInit().SetToday(today).SetCalendar(&hs).SetJurisdiction("TEST")
+        (day(5)/January/year(2026), cdr::Percent::FromFraction(0.10));
+
+    DummyContract contract{"TEST", day(5)/January/year(2026), std::nullopt, cdr::Percent::FromFraction(0.20), 100.};
+    curve.AdaptToContract(&contract);
+
+    auto it = curve.Pillars().find(day(5)/January/year(2026));
+    ASSERT_NE(it, curve.Pillars().end());
+    EXPECT_NEAR(it->second.Fraction(), 0.20, 0.001);
+}

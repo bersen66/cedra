@@ -7,6 +7,7 @@ cdr_cpp_library(
     "floats.h"
     "types.h"
     "expect.h"
+    "errors.h"
   SRCS
     "percent.cc"
   PUBLIC

@@ -6,6 +6,9 @@
 #include <cdr/calendar/freq.h>
 #include <cdr/calendar/holiday_storage.h>
 #include <cdr/base/check.h>
+#include <cdr/types/expect.h>
+#include <cdr/types/errors.h>
+#include <cdr/base/numeric.h>
 
 #include <functional>
 #include <map>
@@ -99,7 +102,11 @@ public:
 
     template <Contract T>
     void AdaptToContract(T *contract) {
-        constexpr f64 precision = 0.001;
+        static constexpr f64 kPrecisionNPV = 0.001;
+        static constexpr f64 kNewtonRaphsonStep = 1e-6;
+        static constexpr int kNewtonRaphsonMaxIters = 20;
+        static constexpr f64 kNewtonRaphsonDerThreashold = 1e-12;
+        
         DateType settlement = contract->SettlementDate();
         Period period{Today(), settlement};
 
@@ -113,6 +120,49 @@ public:
             node = points_.emplace_hint(iter, settlement, Percent::Zero());
         } else {
             node = iter;
+        }
+       
+        auto compute_npv = [&](Percent df) -> std::optional<f64> {
+            node->second = Curve::DiscountToZeroRates(period, df);
+            contract->ApplyCurve(this);
+            return contract->NPV(this);
+        };
+
+        Percent df = MidPoint(left_df, right_df);
+
+        for (int iter = 0; iter < kNewtonRaphsonMaxIters; ++iter) {
+            auto npv_opt = compute_npv(df);
+            
+            if (!npv_opt.has_value()) [[unlikely]] {
+                break;
+            }
+
+            f64 npv = npv_opt.value();
+
+            if (std::abs(npv) <= kPrecisionNPV) {
+                return;
+            }
+
+            Percent df_plus = df + Percent::FromFraction(kNewtonRaphsonStep);
+            if (df_plus.Fraction() > 1.0) df_plus = Percent::FromFraction(1.0);
+
+            auto npv_plus_opt = compute_npv(df_plus);
+            if (!npv_plus_opt.has_value()) {
+                break;
+            }
+
+            f64 deriv = (npv_plus_opt.value() - npv) / kNewtonRaphsonStep;
+            if (std::abs(deriv) < kNewtonRaphsonDerThreashold) {
+                break; // fallback to bissection
+            }
+
+            auto [df_new, clamped] = Clamp(df - Percent::FromFraction(npv / deriv), left_df, right_df);
+
+            if (clamped) {
+                break; // fallback to bissection
+            }
+
+            df = df_new;
         }
 
         std::optional<f64> npv;
@@ -128,7 +178,7 @@ public:
             } else {
                 right_df = mid_df;
             }
-        } while (std::abs(*npv) > precision);
+        } while (std::abs(*npv) > kPrecisionNPV);
     }
 
     // Advance current date and all pillars by one buisness day
