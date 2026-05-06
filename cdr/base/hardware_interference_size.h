@@ -5,16 +5,12 @@
 
 namespace cdr {
 
-#ifdef __cpp_lib_hardware_interference_size
-using std::hardware_constructive_interference_size;
-using std::hardware_destructive_interference_size;
+#if defined(__s390__) || defined(__s390x__)
+inline constexpr std::size_t kDestructiveInterferenceSize = 256;
+#elif defined(powerpc) || defined(__powerpc__) || defined(__ppc__)
+inline constexpr std::size_t kDestructiveInterferenceSize = 128;
 #else
-inline constexpr std::size_t hardware_destructive_interference_size = 64;
-inline constexpr std::size_t hardware_constructive_interference_size = 64;
+inline constexpr std::size_t kDestructiveInterferenceSize = 64;
 #endif
-
-inline constexpr std::size_t kHardwareDestructiveInterferenceSize = hardware_destructive_interference_size;
-
-inline constexpr std::size_t kHardwareConstructiveInterferenceSize = hardware_destructive_interference_size;
 
 }  // namespace cdr
